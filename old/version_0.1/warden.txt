@@ -1,0 +1,433 @@
+;======================GAME DESCRIPTION=========================================
+;Стиль игры - РПГ
+;
+;
+;
+;======================CODE STRUCTURE DESCRIPTION===============================
+;В начале переменные, потом текст кода со всеми функциями, потом контанты.
+;
+;
+;
+;======================EXTERNS==================================================
+extern	__imp__GetStdHandle@4
+extern	__imp__SetConsoleMode@8
+
+extern	__imp__SetConsoleCursorPosition@8
+extern	__imp__WriteConsoleA@20
+extern	__imp__wsprintfA
+
+extern	__imp__Sleep@4
+extern	__imp__GetAsyncKeyState@4
+
+extern	__imp__ExitProcess@4
+;=======================SECTION BSS=============================================
+section .bss
+	written		resb 1							;number of chars written after WriteConsoleA
+	buffer		resb 255
+	stdin		resd 1							;STD_INPUT_HANDLE
+	stdout		resd 1							;STD_OUTPUT_HANDLE
+	console_coord	resd 1							;coord for cursor
+
+;=======================MAIN CODE SECTION=======================================
+section .text
+	global	_main
+;-------------------------------------------------------------------------------
+_main:
+	call	init_stdin_stdout
+	call	init_main_window
+	jmp	main_window_loop
+;-------------------------------------------------------------------------------
+init_stdin_stdout:
+
+	push dword -10
+	call [__imp__GetStdHandle@4]
+	mov [stdin], eax
+
+	push dword 8h
+	push dword [stdin]
+	call [__imp__SetConsoleMode@8]
+
+	push dword -11
+	call [__imp__GetStdHandle@4]
+	mov [stdout], eax
+
+	ret
+;-------------------------------------------------------------------------------
+main_window_loop:
+	push	10
+	call	[__imp__Sleep@4]
+	xor	eax, eax
+
+	push	46h								;compare on press Fight
+	call	[__imp__GetAsyncKeyState@4]
+	cmp	eax, 4294934529
+	je	exit			;<------------------------------remove
+
+	push	53h								;compare on press Stat
+	call	[__imp__GetAsyncKeyState@4]
+	cmp	eax, 4294934529
+	je	exit			;<------------------------------remove
+
+	push	45h								;compare on press Exit
+	call	[__imp__GetAsyncKeyState@4]
+	cmp	eax, 4294934529
+	je	exit
+
+	push	48h								;compare on press HELP
+	call	[__imp__GetAsyncKeyState@4]
+	cmp	eax, 4294934529
+	je	help_window_init
+
+jmp	main_window_loop
+;-------------------------------------------------------------------------------
+help_window_init:
+	xor	ax, ax
+	add	ax, 0
+	xor	cx, cx
+	add	cx, 0
+	call	move_cursor
+
+	mov	eax, 42
+	mov	ecx, 1
+help_window_init_loop:
+	pushad
+	cmp	ecx, 1
+	 je	help_str_line_1
+	cmp	ecx, 2
+	 je	help_str_line_2
+	cmp	ecx, 3
+	 je	help_str_line_3
+	cmp	ecx, 4
+	 je	help_str_line_empty
+	cmp	ecx, 5
+	 je	help_str_line_4
+	cmp	ecx, 6
+	 je	help_str_line_5
+	cmp	ecx, 7
+	 je	help_str_line_empty
+	cmp	ecx, 8
+	 je	help_str_line_6
+	cmp	ecx, 9
+	 je	help_str_line_7
+	cmp	ecx, 10
+	 je	help_str_line_empty
+	cmp	ecx, 11
+	 jg	help_str_line_empty
+
+	push	help_line_8
+	jmp	help_str_chosen
+	help_str_line_1:
+	push	help_line_1
+	jmp	help_str_chosen
+	help_str_line_2:
+	push	help_line_2
+	jmp	help_str_chosen
+	help_str_line_3:
+	push	help_line_3
+	jmp	help_str_chosen
+	help_str_line_4:
+	push	help_line_4
+	jmp	help_str_chosen
+	help_str_line_5:
+	push	help_line_5
+	jmp	help_str_chosen
+	help_str_line_6:
+	push	help_line_6
+	jmp	help_str_chosen
+	help_str_line_7:
+	push	help_line_7
+	jmp	help_str_chosen
+	help_str_line_empty:
+	push	empty_line
+
+	help_str_chosen:
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+	popad
+	add	ecx, 1
+	cmp	ecx, 25
+	 jl	help_window_init_loop
+
+	jmp	help_window_loop
+;-------------------------------------------------------------------------------
+help_window_loop:
+	push	10
+	call	[__imp__Sleep@4]
+	xor	eax, eax
+
+	push	1Bh								;compare on press Esc
+	call	[__imp__GetAsyncKeyState@4]
+	cmp	eax, 4294934529
+	je	help_exit
+
+	jmp	help_window_loop
+help_exit:
+	call	init_main_window
+	jmp	main_window_loop
+;-------------------------------------------------------------------------------
+init_main_window:
+	xor	ax, ax
+	add	ax, 0
+	xor	cx, cx
+	add	cx, 0
+	call	move_cursor
+
+	mov	ecx, 1
+	mov	eax, 42
+	init_main_window_loop_1:
+	pushad
+	jmp	choose_string_1
+	string_1_chosen:
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+	popad
+	add	ecx, 1
+	cmp	ecx, 9
+	 jl	init_main_window_loop_1
+
+	push	empty_line
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+
+	mov	ecx, 1
+	mov	eax, 42
+	init_main_window_loop_2:
+	pushad
+	jmp	choose_string_2
+	string_2_chosen:
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+	popad
+	add	ecx, 1
+	cmp	ecx, 7
+	 jl	init_main_window_loop_2
+
+	push	empty_line
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+
+	mov	ecx, 1
+	mov	eax, 42
+	init_main_window_loop_3:
+	pushad
+	jmp	choose_string_3
+	string_3_chosen:
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+	popad
+	add	ecx, 1
+	cmp	ecx, 7
+	 jl	init_main_window_loop_3
+
+	push	empty_line
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+
+	push	help_line
+	call	add_string_to_buffer
+	call	print_line
+	call	print_end_line
+	ret
+;-------------------------------------------------------------------------------
+choose_string_1:
+	cmp	ecx, 1
+	 je	push_fight_line_1
+	cmp	ecx, 2
+	 je	push_fight_line_2
+	cmp	ecx, 3
+	 je	push_fight_line_3
+	cmp	ecx, 4
+	 je	push_fight_line_4
+	cmp	ecx, 5
+	 je	push_fight_line_5
+	cmp	ecx, 6
+	 je	push_fight_line_6
+	cmp	ecx, 7
+	 je	push_fight_line_7
+
+	push	fight_line_8
+	jmp	string_1_chosen
+	push_fight_line_1:
+	push	fight_line_1
+	jmp	string_1_chosen
+	push_fight_line_2:
+	push	fight_line_2
+	jmp	string_1_chosen
+	push_fight_line_3:
+	push	fight_line_3
+	jmp	string_1_chosen
+	push_fight_line_4:
+	push	fight_line_4
+	jmp	string_1_chosen
+	push_fight_line_5:
+	push	fight_line_5
+	jmp	string_1_chosen
+	push_fight_line_6:
+	push	fight_line_6
+	jmp	string_1_chosen
+	push_fight_line_7:
+	push	fight_line_7
+	jmp	string_1_chosen
+;-------------------------------------------------------------------------------
+choose_string_2:
+	cmp	ecx, 1
+	 je	push_stat_line_1
+	cmp	ecx, 2
+	 je	push_stat_line_2
+	cmp	ecx, 3
+	 je	push_stat_line_3
+	cmp	ecx, 4
+	 je	push_stat_line_4
+	cmp	ecx, 5
+	 je	push_stat_line_5
+
+	push	stat_line_6
+	jmp	string_2_chosen
+	push_stat_line_1:
+	push	stat_line_1
+	jmp	string_2_chosen
+	push_stat_line_2:
+	push	stat_line_2
+	jmp	string_2_chosen
+	push_stat_line_3:
+	push	stat_line_3
+	jmp	string_2_chosen
+	push_stat_line_4:
+	push	stat_line_4
+	jmp	string_2_chosen
+	push_stat_line_5:
+	push	stat_line_5
+	jmp	string_2_chosen
+;-------------------------------------------------------------------------------
+choose_string_3:
+	cmp	ecx, 1
+	 je	push_exit_line_1
+	cmp	ecx, 2
+	 je	push_exit_line_2
+	cmp	ecx, 3
+	 je	push_exit_line_3
+	cmp	ecx, 4
+	 je	push_exit_line_4
+	cmp	ecx, 5
+	 je	push_exit_line_5
+
+	push	exit_line_6
+	jmp	string_3_chosen
+	push_exit_line_1:
+	push	exit_line_1
+	jmp	string_3_chosen
+	push_exit_line_2:
+	push	exit_line_2
+	jmp	string_3_chosen
+	push_exit_line_3:
+	push	exit_line_3
+	jmp	string_3_chosen
+	push_exit_line_4:
+	push	exit_line_4
+	jmp	string_3_chosen
+	push_exit_line_5:
+	push	exit_line_5
+	jmp	string_3_chosen
+;-------------------------------------------------------------------------------
+;	xor	ax, ax
+;	add	ax, 0
+;	xor	cx, cx
+;	add	cx, 0
+;	call	move_cursor
+;-------------------------------------------------------------------------------
+move_cursor:
+	mov	[console_coord], ax						;ax = X coord
+	mov	[console_coord + 2], cx						;cx = Y coord
+	push	dword [console_coord]
+	push	dword [stdout]
+	call	[__imp__SetConsoleCursorPosition@8]
+	ret
+;-------------------------------------------------------------------------------
+add_string_to_buffer:
+	pop	esi								;ret in stack
+	push	sformat
+	push	buffer
+	call	[__imp__wsprintfA]
+	add	esp, 12
+	push	esi
+	ret
+;-------------------------------------------------------------------------------
+;	xor	eax, eax
+;	add	eax, 40
+;	push	line
+;	call	add_string_to_buffer
+;	call	print_line
+;-------------------------------------------------------------------------------
+print_line:
+	push	dword 0
+	push	written
+	push	dword eax							;eax contain number of  char
+	push	buffer
+	push	dword[stdout]
+	call	[__imp__WriteConsoleA@20]
+	ret
+;-------------------------------------------------------------------------------
+print_end_line:
+	push	dword 0
+	push	written
+	push	dword 2
+	push	end_line
+	push	dword[stdout]
+	call	[__imp__WriteConsoleA@20]
+	ret
+;-------------------------------------------------------------------------------
+exit:
+	push	0
+	call	[__imp__ExitProcess@4]
+end
+
+
+;=======================SECTION RDATA===========================================
+section .rdata
+
+fight_line_1	db "         ______ _       _     _           ", 0
+fight_line_2	db "        |  ____(_)     | |   | |          ", 0
+fight_line_3	db "        | |__   _  __ _| |__ | |_         ", 0
+fight_line_4	db "        |  __| | |/ _` | '_ \| __|        ", 0
+fight_line_5	db "        | |    | | (_| | | | | |_         ", 0
+fight_line_6	db "        |_|    |_|\__, |_| |_|\__|        ", 0
+fight_line_7	db "                   __/ |                  ", 0
+fight_line_8	db "                  |___/                   ", 0
+
+stat_line_1	db "  _____ _        _   _     _   _          ", 0
+stat_line_2	db " / ____| |      | | (_)   | | (_)         ", 0
+stat_line_3	db "| (___ | |_ __ _| |_ _ ___| |_ _  ___ ___ ", 0
+stat_line_4	db " \___ \| __/ _` | __| / __| __| |/ __/ __|", 0
+stat_line_5	db " ____) | || (_| | |_| \__ \ |_| | (__\__ \", 0
+stat_line_6	db "|_____/ \__\__,_|\__|_|___/\__|_|\___|___/", 0
+
+exit_line_1	db "            ______       _ _              ", 0
+exit_line_2	db "           |  ____|     (_) |             ", 0
+exit_line_3	db "           | |__  __  __| | |_            ", 0
+exit_line_4	db "           |  __| \ \/ /| | __|           ", 0
+exit_line_5	db "           | |____ >  < | | |_            ", 0
+exit_line_6	db "           |______/_/\_\|_|\__|           ", 0
+
+help_line	db "Press H to open HELP window               ", 0
+
+help_line_1	db "At the start, you have a hero with startup", 0
+help_line_2	db "features, that you may look at Statistics ", 0
+help_line_3	db "(Press S at Main Window (MainW at future))", 0
+help_line_4	db "When you are ready to fight with computer ", 0
+help_line_5	db "go to the tab 'Fight' (Press F at MainW)  ", 0
+help_line_6	db "Anyway, if you are tired about that game, ", 0
+help_line_7	db "you can leave it(Press E at MainW to Exit)", 0
+help_line_8	db "If you ready to play game, press Esc here ", 0
+
+empty_line	db "                                          ", 0
+
+iformat		db "%i", 0
+sformat		db "%s", 0
+end_line	db 0Dh, 0Ah, 0							;\r + \n
